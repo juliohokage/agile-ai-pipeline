@@ -1,0 +1,17 @@
+# Local Claude Code settings (user-specific permissions)
+.claude/settings.local.json
+
+# Pipeline state files (generated at runtime)
+docs/.pipeline-state.json
+docs/.ingestion-manifest.json
+
+# Generated pipeline outputs (re-created by running the pipeline)
+docs/PROJECT_CONTEXT.md
+docs/GAP_ANALYSIS.md
+docs/EPICS.md
+docs/stories/
+docs/VALIDATION_REPORT.md
+docs/JIRA_CREATION_REPORT.md
+docs/SYNC_REPORT.md
+docs/decisions/
+docs/archive/

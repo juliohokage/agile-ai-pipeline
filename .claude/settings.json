@@ -1,0 +1,53 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__atlassian__jira_create_issue|mcp__atlassian__jira_batch_create_issues|mcp__atlassian__jira_link_to_epic|mcp__atlassian__jira_create_issue_link",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'STATE=\"docs/.pipeline-state.json\"; if [ ! -f \"$STATE\" ]; then echo \"BLOCK: No pipeline state file found. Run the validation phase first.\" >&2; exit 1; fi; STATUS=$(python3 -c \"import json,sys; d=json.load(open(sys.argv[1])); print(d.get(\\\"validation\\\",{}).get(\\\"status\\\",\\\"NONE\\\"))\" \"$STATE\" 2>/dev/null); if [ \"$STATUS\" != \"PASS\" ]; then echo \"BLOCK: Validation status is $STATUS (expected PASS). Fix story issues and re-validate.\" >&2; exit 1; fi; SAVED_HASH=$(python3 -c \"import json,sys; d=json.load(open(sys.argv[1])); print(d.get(\\\"validation\\\",{}).get(\\\"stories_hash\\\",\\\"\\\"))\" \"$STATE\" 2>/dev/null); CURRENT_HASH=$(find docs/stories -name \"EPIC-*-stories.md\" -exec sha256sum {} \\; 2>/dev/null | sort | sha256sum | cut -d\" \" -f1); if [ \"$SAVED_HASH\" != \"$CURRENT_HASH\" ]; then echo \"BLOCK: Story files have been modified since validation. Re-run /run-pipeline phase:validate.\" >&2; exit 1; fi; echo \"Validation gate passed (state file verified, stories hash matched).\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'STATE=\"docs/.pipeline-state.json\"; if [ ! -f \"$STATE\" ]; then exit 0; fi; AWAITING=$(python3 -c \"import json,sys; d=json.load(open(sys.argv[1])); print(d.get(\\\"checkpoint\\\",{}).get(\\\"awaiting_human\\\",False))\" \"$STATE\" 2>/dev/null); if [ \"$AWAITING\" = \"True\" ]; then echo \"BLOCK: Human checkpoint active. Awaiting human approval before proceeding to next phase. Do NOT dispatch another agent until the user responds.\" >&2; exit 1; fi; exit 0'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=\"$TOOL_INPUT_file_path\"; if [[ \"$FILE\" == */stories/*.md ]]; then STATE=\"docs/.pipeline-state.json\"; if [ -f \"$STATE\" ]; then python3 -c \"import json,sys; d=json.load(open(sys.argv[1])); d.setdefault(\\\"validation\\\",{})[\\\"status\\\"]=\\\"STALE\\\"; json.dump(d,open(sys.argv[1],\\\"w\\\"),indent=2)\" \"$STATE\" 2>/dev/null; echo \"WARNING: Story file modified — validation invalidated. Re-run /run-pipeline phase:validate before pushing to Jira.\"; fi; fi'"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Agent",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(mkdir *)",
+      "Bash(date *)",
+      "Bash(stat *)",
+      "Bash(sha256sum *)",
+      "Bash(python3 *)",
+      "Bash(find docs/*)"
+    ]
+  }
+}
