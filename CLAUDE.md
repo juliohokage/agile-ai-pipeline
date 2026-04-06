@@ -22,11 +22,15 @@ These files are the source of truth for what the project IS and what needs to be
 ```
 Use Case A: Full Discovery (first run)
   /run-pipeline
+    0. Scale Assessment   → mode selection (lite/full/thorough)
     1. Doc Ingester       → docs/PROJECT_CONTEXT.md
     2. Gap Analyst        → docs/GAP_ANALYSIS.md         ⚠️ HUMAN CHECKPOINT
+   2.5 Party Mode         → GAP_ANALYSIS.md (appended)   (thorough only)
     3. Epic Decomposer    → docs/EPICS.md                ⚠️ HUMAN CHECKPOINT
+   3.5 Readiness Gate     → pass/fail check              (thorough only)
     4. Story Writer (PO)  → docs/stories/EPIC-{n}-stories.md  (parallelizable per epic)
-    5. Story Validator    → docs/VALIDATION_REPORT.md    ⚠️ HUMAN CHECKPOINT
+    5. Story Validator    → docs/VALIDATION_REPORT.md
+   5.5 Adversarial Review → VALIDATION_REPORT.md (appended) ⚠️ HUMAN CHECKPOINT
     6. Jira Creator       → Jira MCP
 
 Use Case B: Focused Deep Dive
@@ -42,17 +46,52 @@ Use Case D: Jira Sync (pull state back)
     Pulls Jira ticket statuses, compares with docs, produces SYNC_REPORT.md
 ```
 
-### Agents (7 total)
+### Agents (8 pipeline + Orchestrator)
 
-| Agent | File | Role |
-|-------|------|------|
-| Doc Ingester | `.claude/agents/doc-ingester.md` | Reads docs, creates PROJECT_CONTEXT.md (incremental) |
-| Gap Analyst | `.claude/agents/gap-analyst.md` | Identifies gaps, risks, unknowns (supports focus mode) |
-| Epic Decomposer | `.claude/agents/epic-decomposer.md` | Creates Epics with MoSCoW + dependencies (append mode) |
-| Story Writer | `.claude/agents/story-writer.md` | INVEST stories + Spikes with Gherkin AC (append mode) |
-| Story Validator | `.claude/agents/story-validator.md` | Validates quality, gates Jira creation (subset mode) |
-| Jira Sync | `.claude/agents/jira-sync.md` | Pulls Jira state back to docs |
-| Orchestrator | `.claude/skills/run-pipeline/SKILL.md` | Chains all agents, manages checkpoints |
+| Agent | Persona | File | Role |
+|-------|---------|------|------|
+| Doc Ingester | Aria | `.claude/agents/doc-ingester.md` | Reads docs, creates PROJECT_CONTEXT.md (incremental) |
+| Gap Analyst | Sophia | `.claude/agents/gap-analyst.md` | Identifies gaps, risks, unknowns (supports focus mode) |
+| Epic Decomposer | Marcus | `.claude/agents/epic-decomposer.md` | Creates Epics with MoSCoW + dependencies (append mode) |
+| Story Writer | Elena | `.claude/agents/story-writer.md` | INVEST stories + Spikes with Gherkin AC (append mode) |
+| Story Validator | Kai | `.claude/agents/story-validator.md` | Validates quality, gates Jira creation (subset mode) |
+| Adversarial Reviewer | Rex | `.claude/agents/adversarial-reviewer.md` | Finds completeness gaps, hidden assumptions, missing error scenarios |
+| Edge Case Hunter | Nova | `.claude/agents/edge-case-hunter.md` | Traces Gherkin paths, reports unhandled branches (thorough only) |
+| Jira Sync | Dash | `.claude/agents/jira-sync.md` | Pulls Jira state back to docs |
+| Orchestrator | — | `.claude/skills/run-pipeline/SKILL.md` | Routes phases, manages state, enforces checkpoints |
+
+### Orchestrator: Step-File Architecture
+
+The orchestrator uses a step-file architecture for token efficiency — each phase is defined
+in its own file, loaded just-in-time:
+
+```
+.claude/skills/run-pipeline/
+├── SKILL.md                    ← Entry point: mode detection, routing, shared logic
+├── steps/
+│   ├── phase-0-assessment.md   ← Content-aware scoring → mode selection
+│   ├── phase-1-ingest.md       ← Doc Ingester dispatch
+│   ├── phase-2-analyze.md      ← Gap Analyst dispatch + checkpoint
+│   ├── phase-2.5-party.md      ← Multi-agent gap review (thorough only)
+│   ├── phase-3-decompose.md    ← Epic Decomposer dispatch + checkpoint
+│   ├── phase-3.5-readiness.md  ← Implementation readiness gate (thorough only)
+│   ├── phase-4-stories.md      ← Story Writer dispatch (parallel per Epic)
+│   ├── phase-5-validate.md     ← Story Validator dispatch
+│   ├── phase-5.5-review.md     ← Adversarial review + Edge case hunter + checkpoint
+│   ├── phase-6-jira.md         ← Jira creation with resume support
+│   └── phase-sync.md           ← Jira sync agent dispatch
+└── config/
+    └── scale-thresholds.md     ← Scoring rubric and mode thresholds
+```
+
+### Scale-Adaptive Depth
+
+The pipeline adapts its depth to project complexity via content-aware scoring (Phase 0):
+- **lite** (score 6-12): Collapsed phases, minimal checkpoints, INVEST validation only
+- **full** (score 13-20): All phases, standard checkpoints, adversarial review
+- **thorough** (score 21-30): Full ceremony — party mode, readiness gate, edge case hunting, progressive checkpoints
+
+Override with: `/run-pipeline mode:lite` or `/run-pipeline mode:thorough`
 
 ### Key Directories
 
@@ -62,12 +101,14 @@ Use Case D: Jira Sync (pull state back)
 - `docs/decisions/` — Decision documents produced by Spikes
 - `docs/archive/` — Archived resolved/completed items (auto-managed by orchestrator)
 - `docs/meeting-transcripts/` — Meeting transcripts for ingestion (`{YYYY-MM-DD}-{topic}.md`)
-- `.claude/agents/` — Subagent definitions
-- `.claude/skills/run-pipeline/` — Orchestrator skill
+- `.claude/agents/` — 8 subagent definitions (6 pipeline + 2 review)
+- `.claude/skills/run-pipeline/` — Orchestrator entry point + step files + config
+- `.claude/skills/run-pipeline/steps/` — Per-phase step files (11 files)
+- `.claude/skills/run-pipeline/config/` — Scale thresholds and scoring rubric
 
 ### State Files
 
-- `docs/.pipeline-state.json` — Pipeline integrity: validation gate, Jira resume, ID registry, checkpoint enforcement
+- `docs/.pipeline-state.json` — Pipeline integrity: validation gate, Jira resume, ID registry, checkpoint enforcement, scale score
 - `docs/.ingestion-manifest.json` — Tracks which docs have been ingested (modification dates + SHA256 hashes)
 
 ### MCP Integration
@@ -75,6 +116,14 @@ Use Case D: Jira Sync (pull state back)
 - **Jira**: Uses `sooperset/mcp-atlassian` — tools prefixed with `mcp__atlassian__` (or your configured server name)
   - `jira_create_issue`, `jira_batch_create_issues`, `jira_link_to_epic`, `jira_search`
 - **Context7**: For library/framework documentation lookup
+
+### Superpowers Skills Used
+
+| Skill | Used In | Purpose |
+|-------|---------|---------|
+| `superpowers:brainstorming` | Phase 2 | Creative exploration during gap analysis |
+| `superpowers:dispatching-parallel-agents` | Phase 4, Phase 2.5 | Parallel story writing, multi-agent party mode |
+| `superpowers:verification-before-completion` | Phase 5.5 → 6 | Pre-flight checks before Jira creation |
 
 ### Jira Configuration
 
@@ -91,18 +140,24 @@ See `docs/PIPELINE_GUIDE.md` for full documentation.
 ```bash
 /run-pipeline                                    # Full discovery (first run)
 /run-pipeline focus:"alerts and remediation"     # Deep dive on a topic
+/run-pipeline mode:thorough                      # Force thorough mode
 /run-pipeline phase:ingest                       # Re-ingest after adding docs
 /run-pipeline phase:sync                         # Pull Jira state back
 /run-pipeline phase:write-stories epic:3         # Write stories for one Epic
 /run-pipeline phase:create-jira project-key:MYPROJ  # Push to Jira
+/user-story topic:"SSO auth" --validate --jira   # Quick story with auto-validate and Jira push
+/project-status                                  # Quick status with ranked next actions
+/sprint-health                                   # Live Jira sprint dashboard
 ```
 
 ## Conventions
 
 - All agent outputs are markdown files in `docs/`
+- Each agent has a named persona that biases output toward desired behavior
 - Stories follow INVEST criteria with Gherkin acceptance criteria
 - Research/study tasks use Spike format (time-boxed, output-defined)
 - Human checkpoints are mandatory — enforced by PreToolUse hook on Agent dispatching
+- Checkpoint depth scales with pipeline mode (orientation-only in lite, progressive in thorough)
 - Each agent is independently testable via the Agent tool
 - Docs are append-only in focused/refresh modes — never overwrite existing data
 - Gap IDs and Epic numbers are permanent — never reused, managed via `.pipeline-state.json`
@@ -110,3 +165,4 @@ See `docs/PIPELINE_GUIDE.md` for full documentation.
 - Jira creation is resumable — state file tracks created/pending tickets incrementally
 - Document health is auto-managed — resolved items archived when bloat exceeds thresholds
 - Focused runs include scope refinement — orchestrator clarifies vague focus topics before proceeding
+- Scale thresholds are calibratable — adjust based on team experience, user can always override

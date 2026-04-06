@@ -75,24 +75,56 @@ Read `docs/GAP_ANALYSIS.md` and show only OPEN gaps (skip resolved):
 **Unanswered Questions**: {n}
 ```
 
-### Step 5: What needs attention
+### Step 5: Intelligent next-action recommendations
 
-Based on all available data, list what should happen next:
+Score each potential action by **urgency** (how time-sensitive) and **impact** (how much it
+unblocks). Present the top 3-5 actions ranked by combined score.
+
+#### Scoring signals to check:
+
+**Pipeline not started** (urgency: HIGH, impact: HIGH):
+- If no `docs/PROJECT_CONTEXT.md` exists → "Run `/run-pipeline` to start discovery"
+
+**Critical gaps unresolved** (urgency: HIGH, impact: HIGH):
+- If GAP_ANALYSIS.md has critical/high open gaps → "Review GAP_ANALYSIS.md — {n} critical gaps need stakeholder decisions"
+
+**Validation stale or failed** (urgency: HIGH, impact: MEDIUM):
+- Read `docs/.pipeline-state.json` → if `validation.status` is "STALE" or "FAIL"
+  → "Re-validate stories — validation is {STALE|FAILED}. Run `/run-pipeline phase:validate`"
+
+**Ingestion stale** (urgency: MEDIUM, impact: MEDIUM):
+- Read `docs/.ingestion-manifest.json` → compare `last_run` against doc mtimes
+- If any doc is newer than last ingestion → "Re-ingest docs — {n} files changed since last ingestion on {date}. Run `/run-pipeline phase:ingest`"
+
+**Jira sync stale** (urgency: MEDIUM, impact: LOW):
+- If `docs/JIRA_CREATION_REPORT.md` exists but `docs/SYNC_REPORT.md` doesn't exist or is old
+  → "Sync with Jira — tickets exist but haven't been synced{' since {date}' if sync report exists}. Run `/run-pipeline phase:sync`"
+
+**Epics without stories** (urgency: LOW, impact: MEDIUM):
+- Cross-reference EPICS.md with story files → if any Epic has no story file
+  → "Write stories for EPIC-{n} — no stories exist yet. Run `/run-pipeline phase:write-stories epic:{n}`"
+
+**Adversarial review not run** (urgency: LOW, impact: LOW):
+- If VALIDATION_REPORT.md exists but has no "Adversarial Review Findings" section
+  → "Consider running adversarial review for stronger validation"
+
+**Scale assessment** (informational):
+- If `docs/.pipeline-state.json` has `scale` data → show: "Pipeline mode: {mode} (score: {score}/30)"
 
 ```markdown
-### Next Actions
+### Next Actions (ranked by urgency × impact)
 
-1. {Most urgent action based on current state}
-2. {Second priority}
-3. ...
+1. **[URGENT]** {action} — {reason}
+2. **[RECOMMENDED]** {action} — {reason}
+3. **[OPTIONAL]** {action} — {reason}
 ```
 
-Examples:
-- "Run `/run-pipeline` — pipeline hasn't been started yet"
-- "Run `/run-pipeline phase:sync` — last sync was 5 days ago"
-- "Review GAP_ANALYSIS.md — 3 critical gaps need stakeholder decisions"
-- "Fix validation failures — 2 stories failed INVEST checks"
-- "Run `/run-pipeline focus:'alerts'` — EPIC-3 has no stories yet"
+### Step 6: Mode recommendation (if pipeline hasn't been run)
+
+If no pipeline outputs exist at all:
+- Count docs in `docs/` (excluding generated files)
+- Suggest: "You have {n} documentation files. Run `/run-pipeline` to start.
+  The pipeline will assess project complexity and recommend a mode (lite/full/thorough)."
 
 ## Rules
 
@@ -100,4 +132,5 @@ Examples:
 - Use last available data — don't query Jira (use `/sprint-health` for live Jira data)
 - If no pipeline outputs exist, say so and suggest running `/run-pipeline`
 - Keep the output concise — this is a quick status check, not a deep analysis
-- Always end with actionable next steps
+- Always end with actionable next steps ranked by urgency and impact
+- Check `docs/.pipeline-state.json` for validation state and scale score when available

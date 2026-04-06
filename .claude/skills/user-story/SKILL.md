@@ -17,6 +17,16 @@ arguments:
     description: >
       Optional. "story" (default) or "spike" for research/study tasks.
     default: story
+  - name: validate
+    description: >
+      Optional flag. If set, automatically validates the story after saving
+      by dispatching the Story Validator in subset mode.
+    default: false
+  - name: jira
+    description: >
+      Optional flag. If set (and --validate passes), automatically creates
+      a Jira ticket for the story. Requires validation to pass first.
+    default: false
 ---
 
 # Quick User Story Generator
@@ -69,13 +79,38 @@ Show the drafted story in full format. Ask:
   - Save to `docs/stories/STANDALONE-stories.md` (for stories not yet assigned to an Epic)
   - Note: These should be assigned to an Epic during the next backlog refinement
 
-### Step 6: Offer Jira creation
+### Step 6: Auto-validate (if --validate flag is set)
 
-Ask: "Want me to create this in Jira now? (Requires validation gate to be passed, or you can create it directly with `/run-pipeline phase:create-jira`)"
+If `$ARGUMENTS.validate` is true:
+1. Dispatch the `story-validator` subagent in SUBSET mode for just the saved story file
+2. Report validation result: PASS / FAIL / WARNINGS
+3. If FAIL: show the issues and ask if the user wants to fix them
+4. If PASS: update `docs/.pipeline-state.json` validation status and stories hash
+
+If `$ARGUMENTS.validate` is false:
+- Ask: "Want me to validate this story? (Use `--validate` flag for automatic validation)"
+
+### Step 7: Auto-create Jira ticket (if --jira flag is set)
+
+If `$ARGUMENTS.jira` is true AND validation passed (Step 6):
+1. Run pre-flight checks (same as Phase 6):
+   - `docs/.pipeline-state.json` → `validation.status` == "PASS"
+   - Stories hash matches
+   - Project key is configured
+2. Create the Jira ticket using `mcp__atlassian__jira_create_issue`
+3. If epic is specified, link to the Epic's Jira ticket (if it exists)
+4. Update `docs/.pipeline-state.json` → `jira_creation.created`
+5. Report: "Jira ticket created: {JIRA-KEY}"
+
+If `$ARGUMENTS.jira` is true BUT validation failed:
+- "Cannot create Jira ticket — validation failed. Fix the issues first."
+
+If `$ARGUMENTS.jira` is false:
+- Ask: "Want me to create this in Jira now? (Use `--validate --jira` flags for automatic flow)"
 
 ## Rules
 
-- This skill does NOT bypass the validation gate for Jira creation
-- Stories created here should still be validated before Jira push
+- The `--jira` flag requires `--validate` to also be set (or validation to have already passed)
+- Stories created here with `--validate` update the validation gate in `.pipeline-state.json`
 - If the topic is too large for a single story, suggest splitting and offer to run the full pipeline instead
 - Always show the INVEST check results (for stories) or Spike criteria check (for spikes)
