@@ -134,6 +134,33 @@ EPIC-6 (Should Have) [New] — added via focus: "metrics backend"
 2. **Sprint 2**: EPIC-2 (depends on EPIC-1)
 3. **Sprint 3**: EPIC-4, EPIC-5, EPIC-6 (depends on EPIC-2)
 
+## Gap Coverage Map
+
+Before writing this section, you MUST:
+1. Extract every gap ID from GAP_ANALYSIS.md (grep for pattern `{PREFIX}-{N}` where PREFIX is RG, KG, DG, TG, PG, RSG or similar)
+2. Classify each as Open or Resolved (check the Status column)
+3. For each OPEN gap, identify which Epic(s) cover it
+4. Count: total gaps, resolved gaps, covered open gaps, uncovered open gaps
+
+Write the header line as a computed summary — do NOT estimate or round:
+
+```
+{covered_count} of {open_count} open gaps covered ({resolved_count} resolved gaps excluded).
+{If uncovered > 0: "Uncovered open gaps: {list with IDs and reason}"}
+```
+
+Then write the table mapping each covered gap to its Epic(s):
+
+| Gap ID | Covered By |
+|--------|------------|
+| {ID} | EPIC-{n} ({reason}) |
+
+If any open gap has no Epic covering it, either:
+- Create a new Epic for it, OR
+- List it explicitly as uncovered with justification (e.g., deferred, out of scope for current phase)
+
+Never claim "All gaps covered" unless the count confirms it.
+
 ---
 
 ## Epic Details
@@ -148,7 +175,8 @@ EPIC-6 (Should Have) [New] — added via focus: "metrics backend"
 
 - Read the epic-template.md before writing — follow the format exactly
 - Every OPEN gap from GAP_ANALYSIS.md should map to at least one Epic
-- If a gap cannot be addressed by any Epic, create a new Epic for it or flag it as out of scope
+- If a gap cannot be addressed by any Epic, create a new Epic for it or list it explicitly as uncovered with justification
+- **Gap counts must be computed, not estimated** — count the actual IDs in GAP_ANALYSIS.md, classify each as open/resolved, then verify your coverage map totals match. If your header says "X of Y gaps covered", X + uncovered + resolved must equal total gap count.
 - DO NOT create Epics for work that is already done
 - In focused mode: DO NOT modify existing Epics unless adding dependencies to new ones
 - Epic numbers are permanent — never reuse an Epic number

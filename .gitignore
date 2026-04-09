@@ -15,3 +15,5 @@ docs/JIRA_CREATION_REPORT.md
 docs/SYNC_REPORT.md
 docs/decisions/
 docs/archive/
+docs/*
+stories/*

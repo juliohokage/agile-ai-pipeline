@@ -52,6 +52,11 @@ as `## Project Context (injected)` block.
 
 - Confirm `docs/EPICS.md` was created/updated
 - Extract: Epic count, dependency graph, execution order
+- **Verify gap coverage map accuracy**:
+  1. Count all gap IDs in `docs/GAP_ANALYSIS.md` (use `grep -oE '(RG|KG|DG|TG|PG|RSG)-[0-9]+' docs/GAP_ANALYSIS.md | sort -u | wc -l`)
+  2. Count resolved vs open gaps (check Status column for "Resolved")
+  3. Count gap IDs in the coverage map table in `docs/EPICS.md` (use `grep -oE '^\| (RG|KG|DG|TG|PG|RSG)-[0-9]+' docs/EPICS.md | sort -u | wc -l`)
+  4. Verify: covered + uncovered + resolved = total. If the numbers don't add up, fix the coverage map before proceeding — do NOT approximate or accept the agent's self-reported count
 
 ### Step 5: Update state
 
