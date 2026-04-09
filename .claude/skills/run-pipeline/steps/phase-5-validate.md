@@ -45,11 +45,15 @@ stories that previously FAILed or had WARNINGs. Update their status. Recalculate
 ### Step 4: Update state
 
 Update `docs/.pipeline-state.json`:
-- If PASS: `validation.status` → "PASS"
-- If FAIL: `validation.status` → "FAIL"
+- If all items PASS: `validation.status` → "PASS"
+- If all items PASS but some have warnings: `validation.status` → "PASS_WITH_WARNINGS"
+- If any item FAIL: `validation.status` → "FAIL"
 - `validation.timestamp` → current ISO-8601
 - Compute `validation.stories_hash`:
   `find docs/stories -name "EPIC-*-stories.md" -exec sha256sum {} \; | sort | sha256sum`
+- **Verify item counts**: Count actual `### US-*` and `### SPIKE-*` headings across all story files.
+  Store the real count in `validation.items_total`. Do NOT rely on the validator agent's self-reported
+  count — compute it independently: `grep -rcE '^### (US|SPIKE)-' docs/stories/ | awk -F: '{s+=$2} END {print s}'`
 - Update `ids.highest_story` with highest story number per Epic
 
 ### Step 5: Handle failures
@@ -71,7 +75,7 @@ If validation FAILS:
 ```json
 {
   "validation": {
-    "status": "{PASS|FAIL}",
+    "status": "{PASS|PASS_WITH_WARNINGS|FAIL}",
     "timestamp": "{ISO-8601}",
     "stories_hash": "{sha256}"
   },

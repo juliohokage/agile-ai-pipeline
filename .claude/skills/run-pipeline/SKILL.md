@@ -74,8 +74,17 @@ Otherwise, auto-detect the pipeline use case:
 |-----------|----------|
 | `$ARGUMENTS.focus` is set | **Focused** (Use Case B) |
 | `$ARGUMENTS.phase` is "sync" | **Sync** (Use Case D) |
+| `$ARGUMENTS.phase` is "ingest" | **Refresh ingestion** (Use Case C) |
+| `$ARGUMENTS.phase` is "analyze" | **Single phase**: run Phase 2 only (requires PROJECT_CONTEXT.md) |
+| `$ARGUMENTS.phase` is "decompose" | **Single phase**: run Phase 3 only (requires GAP_ANALYSIS.md) |
+| `$ARGUMENTS.phase` is "write-stories" | **Single phase**: run Phase 4 only (requires EPICS.md). Accepts `epic:{n}` to scope to one Epic |
+| `$ARGUMENTS.phase` is "validate" | **Single phase**: run Phase 5 only (requires story files) |
+| `$ARGUMENTS.phase` is "create-jira" | **Single phase**: run Phase 6 only (requires validation PASS/PASS_WITH_WARNINGS). Accepts `project-key:{KEY}` |
 | `docs/PROJECT_CONTEXT.md` does not exist | **Discovery** (Use Case A) |
 | `docs/PROJECT_CONTEXT.md` exists AND no focus | **Refresh** (Use Case C) |
+
+For single-phase runs, check that the prerequisite files exist before proceeding.
+If missing, report which file is needed and suggest the correct phase to run first.
 
 ## Important: Leverage Existing Skills
 
@@ -125,12 +134,16 @@ For large projects (PROJECT_CONTEXT.md > 50KB), apply lossless compression befor
     "overridden": false
   },
   "validation": {
-    "status": "PASS|FAIL|STALE|NONE",
+    "status": "PASS|PASS_WITH_WARNINGS|FAIL|STALE|NONE",
     "timestamp": "ISO-8601",
-    "stories_hash": "sha256-of-all-story-files-combined"
+    "stories_hash": "sha256-of-sorted-sha256sum-output-lines",
+    "items_total": 0,
+    "items_pass": 0,
+    "items_fail": 0,
+    "items_warning": 0
   },
   "jira_creation": {
-    "phase": "not_started|in_progress|complete",
+    "phase": "not_started|in_progress|complete|skipped",
     "created": [],
     "pending": [],
     "failed": []

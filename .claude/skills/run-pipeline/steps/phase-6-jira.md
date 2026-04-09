@@ -17,7 +17,7 @@ Inline (orchestrator makes direct Jira MCP calls, no subagent dispatch).
 ### Step 1: Pre-flight checks
 
 Use `superpowers:verification-before-completion` to verify:
-1. `docs/.pipeline-state.json` → `validation.status` == "PASS"
+1. `docs/.pipeline-state.json` → `validation.status` is "PASS" or "PASS_WITH_WARNINGS"
 2. Re-compute stories hash, compare against `validation.stories_hash`
 3. User has explicitly approved Jira creation (at the Phase 5/5.5 checkpoint)
 4. Project key is configured (not "ADDPROJECTKEY" unless user confirmed it)
@@ -39,7 +39,16 @@ If not resuming:
 
 ### Step 4: Create Epics
 
-For each Epic in `docs/EPICS.md` (skip if already in `created`):
+For each Epic in `docs/EPICS.md` (skip if already in `created`).
+
+**Idempotency check**: Before creating each issue, search Jira first:
+```
+Call: jira_search
+  jql: "project = {project-key} AND summary ~ '{exact title}' AND issuetype = {type}"
+```
+If a matching issue already exists (same summary + type), skip creation and record the existing
+Jira key in `created`. This prevents duplicates if the pipeline crashed after Jira creation
+but before state update.
 ```
 Call: mcp__atlassian__jira_create_issue
   project_key: {project-key}

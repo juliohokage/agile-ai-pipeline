@@ -48,6 +48,12 @@ Query Jira for all project issues:
 Call: jira_search
 Parameters:
   jql: "project = {PROJECT_KEY} ORDER BY created ASC"
+  maxResults: 100
+  startAt: 0
+
+**Pagination**: If the result count equals maxResults, increment startAt by maxResults
+and repeat the query. Continue until fewer results than maxResults are returned.
+Combine all pages before proceeding to comparison.
 ```
 
 For each issue returned, capture:

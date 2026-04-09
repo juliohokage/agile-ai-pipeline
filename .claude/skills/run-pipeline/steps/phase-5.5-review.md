@@ -33,8 +33,10 @@ If mode is thorough, launch the `edge-case-hunter` subagent:
 Enumerate every execution path. Report only unhandled paths.
 Append your findings to docs/VALIDATION_REPORT.md under '### Edge Case Analysis'."
 
-In thorough mode, Rex and Nova can run in parallel using
-`superpowers:dispatching-parallel-agents`.
+In thorough mode, Rex and Nova MUST NOT write to the same file in parallel.
+Instead, dispatch them using `superpowers:dispatching-parallel-agents` but have each
+agent return findings as structured output (not append to a file). After both complete,
+the orchestrator writes a single combined update to `docs/VALIDATION_REPORT.md`.
 
 ### Step 3: Verify output
 
@@ -44,7 +46,7 @@ In thorough mode, Rex and Nova can run in parallel using
 ### Step 4: Pre-Jira verification
 
 Use `superpowers:verification-before-completion` to run pre-flight checks:
-1. `docs/.pipeline-state.json` → `validation.status` == "PASS"
+1. `docs/.pipeline-state.json` → `validation.status` is "PASS" or "PASS_WITH_WARNINGS"
 2. Stories hash matches (re-compute and compare)
 3. Review findings are recorded in VALIDATION_REPORT.md
 
