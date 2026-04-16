@@ -57,6 +57,12 @@ When stories were fixed based on a previous validation report:
 - Re-validation mode: Read only files containing previously failed stories
 - Build a complete inventory of all stories and spikes
 
+**Count precisely.** Before writing any summary numbers, count the `### US-*` and
+`### SPIKE-*` headings yourself from the file contents. The `Items Validated:`, `Pass:`,
+`Fail:`, `Warning:`, and per-Epic `Items` column values MUST equal the observed counts.
+Do NOT guess. If the header totals do not equal the sum of the per-Epic `Items` column,
+re-count until they agree.
+
 ### Step 2: Validate each item individually
 
 #### For User Stories — INVEST Criteria (PASS/FAIL each)

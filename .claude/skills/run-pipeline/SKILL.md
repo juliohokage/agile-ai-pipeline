@@ -80,6 +80,7 @@ Otherwise, auto-detect the pipeline use case:
 | `$ARGUMENTS.phase` is "write-stories" | **Single phase**: run Phase 4 only (requires EPICS.md). Accepts `epic:{n}` to scope to one Epic |
 | `$ARGUMENTS.phase` is "validate" | **Single phase**: run Phase 5 only (requires story files) |
 | `$ARGUMENTS.phase` is "create-jira" | **Single phase**: run Phase 6 only (requires validation PASS/PASS_WITH_WARNINGS). Accepts `project-key:{KEY}` |
+| `$ARGUMENTS.phase` is "all" or unset | fall through to focus/Discovery/Refresh checks below |
 | `docs/PROJECT_CONTEXT.md` does not exist | **Discovery** (Use Case A) |
 | `docs/PROJECT_CONTEXT.md` exists AND no focus | **Refresh** (Use Case C) |
 

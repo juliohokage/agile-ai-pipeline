@@ -40,8 +40,7 @@ For each Epic to process, construct a prompt:
 ## Instructions
 - Read docs/templates/story-template.md for format
 - Output to docs/stories/EPIC-{n}-stories.md
-- Start story numbering from US-{n}.{next_story_number}
-- Start spike numbering from SPIKE-{n}.{next_spike_number}
+- Numbering: stories and spikes share a single sequence per Epic (next number = {next_item_number}). A Spike and a Story MUST NOT share the same number.
 - Follow INVEST criteria. Self-check before finalizing.
 - At least 2 Gherkin scenarios per item."
 ```

@@ -33,19 +33,19 @@ For each file, extract:
 |-----------|-----------------|-----------|
 | **Volume** | Total word count across all docs | 1=<2K words, 2=2-10K, 3=10-25K, 4=25-50K, 5=>50K |
 | **Complexity** | Distinct systems, components, services mentioned | 1=monolith/1-2 components, 2=3-5, 3=6-10, 4=11-20, 5=>20 |
-| **Clarity** | Ratio of explicit decisions vs TBDs/TODOs/unclear items | 1=mostly TBD (>50%), 2=many TBDs (30-50%), 3=some (15-30%), 4=few (5-15%), 5=all decided (<5%) |
-| **Consistency** | Contradictions detected between docs | 1=many conflicts (>10), 2=several (5-10), 3=some (3-4), 4=few (1-2), 5=fully aligned (0) |
+| **Clarity** (inverted) | Ratio of explicit decisions vs TBDs/TODOs/unclear items | 1=all decided (<5% TBD), 2=few TBDs (5-15%), 3=some (15-30%), 4=many TBDs (30-50%), 5=mostly TBD (>50%) |
+| **Consistency** (inverted) | Contradictions detected between docs | 1=fully aligned (0), 2=few conflicts (1-2), 3=some (3-4), 4=several (5-10), 5=many conflicts (>10) |
 | **Domain breadth** | Number of distinct domains (infra, security, UX, data, etc.) | 1=single domain, 2=2 domains, 3=3 domains, 4=4 domains, 5=5+ domains |
 | **Risk indicators** | Regulatory, compliance, security mentions | 1=none, 2=mentioned once, 3=several mentions, 4=dedicated sections, 5=heavily regulated |
 
-**Important**: Clarity scores INVERSELY — lower clarity = higher score (more work needed).
-Flip the clarity score: `clarity_score = 6 - raw_clarity`. A project with mostly TBDs needs
-MORE pipeline depth, not less.
+**Note on Clarity and Consistency**: These are scored inversely — a project with many TBDs
+and contradictions needs MORE pipeline depth, not less. The rubric above already accounts
+for this (higher raw score = more work needed), so the composite formula is a direct sum.
 
 ### Step 3: Compute composite score
 
 ```
-composite = volume + complexity + (6 - clarity) + (6 - consistency) + domain_breadth + risk_indicators
+composite = volume + complexity + clarity + consistency + domain_breadth + risk_indicators
 ```
 
 Score range: 6-30.

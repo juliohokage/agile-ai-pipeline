@@ -2,6 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
+        "_comment": "Matcher is hard-coded to mcp__atlassian__*. If your Jira MCP server is configured with a different name, update the matcher prefix or the validation gate will silently not fire.",
         "matcher": "mcp__atlassian__jira_create_issue|mcp__atlassian__jira_batch_create_issues|mcp__atlassian__jira_link_to_epic|mcp__atlassian__jira_create_issue_link",
         "hooks": [
           {
@@ -26,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'FILE=\"$TOOL_INPUT_file_path\"; if [[ \"$FILE\" == */stories/*.md ]]; then STATE=\"docs/.pipeline-state.json\"; if [ -f \"$STATE\" ]; then if command -v python3 &>/dev/null && python3 -c \"import json,sys; d=json.load(open(sys.argv[1])); d.setdefault(\\\"validation\\\",{})[\\\"status\\\"]=\\\"STALE\\\"; json.dump(d,open(sys.argv[1],\\\"w\\\"),indent=2)\" \"$STATE\" 2>/dev/null; then echo \"WARNING: Story file modified — validation invalidated. Re-run /run-pipeline phase:validate before pushing to Jira.\"; else echo \"ERROR: Failed to invalidate validation state. Manually check docs/.pipeline-state.json before creating Jira tickets.\" >&2; fi; fi; fi'"
+            "command": "bash -c 'if ! command -v python3 &>/dev/null; then exit 0; fi; FILE=$(python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"tool_input\\\",{}).get(\\\"file_path\\\",\\\"\\\") or \\\"\\\")\" 2>/dev/null); if [ -z \"$FILE\" ]; then exit 0; fi; if [[ \"$FILE\" == */stories/*.md ]]; then STATE=\"docs/.pipeline-state.json\"; if [ -f \"$STATE\" ]; then if python3 -c \"import json,sys; d=json.load(open(sys.argv[1])); d.setdefault(\\\"validation\\\",{})[\\\"status\\\"]=\\\"STALE\\\"; json.dump(d,open(sys.argv[1],\\\"w\\\"),indent=2)\" \"$STATE\" 2>/dev/null; then echo \"WARNING: Story file modified — validation invalidated. Re-run /run-pipeline phase:validate before pushing to Jira.\"; else echo \"ERROR: Failed to invalidate validation state. Manually check docs/.pipeline-state.json before creating Jira tickets.\" >&2; fi; fi; fi'"
           }
         ]
       }

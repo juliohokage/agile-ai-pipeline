@@ -54,6 +54,10 @@ Parameters:
 **Pagination**: If the result count equals maxResults, increment startAt by maxResults
 and repeat the query. Continue until fewer results than maxResults are returned.
 Combine all pages before proceeding to comparison.
+
+**Pagination assertion**: After the loop, verify `len(accumulated_issues) == total`
+from the last Jira response. If mismatched, log a warning in SYNC_REPORT.md under a
+`### Pagination Anomaly` section and do NOT proceed to Step 3.
 ```
 
 For each issue returned, capture:
@@ -168,7 +172,7 @@ Based on completed work, these gaps may now be closed:
 | Gap ID | Gap Description | Resolved By |
 |--------|----------------|-------------|
 | TG-2 | No monitoring infrastructure | EPIC-1 (60% complete — 3/5 stories done) |
-| KG-1 | Metrics backend unknown | SPIKE-2.1 (In Progress) |
+| KG-1 | Metrics backend unknown | SPIKE-2.5 (In Progress) |
 
 **Note**: Gaps should only be marked resolved after human verification.
 
